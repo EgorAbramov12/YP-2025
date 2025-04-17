@@ -1,7 +1,7 @@
 import pygame
 import math
 
-# Константы
+# Констант
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 BACKGROUND_COLOR = (173, 216, 230)
