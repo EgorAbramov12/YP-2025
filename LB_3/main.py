@@ -1,136 +1,188 @@
 import pygame
 import math
 
-# Initialize Pygame
-pygame.init()
+# Константы
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+BACKGROUND_COLOR = (173, 216, 230)
+BUNNY_COLOR = (245, 245, 245)
+OUTLINE_COLOR = (40, 40, 40)
+EAR_INNER_COLOR = (255, 205, 210)
+EYE_COLOR = (30, 30, 30)
+NOSE_COLOR = (255, 175, 175)
+WHISKER_COLOR = (80, 80, 80)
+SHADOW_COLOR = (200, 200, 200, 50)
+MOUTH_COLOR = (100, 100, 100)
 
-# Window dimensions
-width = 800
-height = 600
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Python is Really Amazing!")
-
-# Colors
-white = (255, 255, 255)
-skin_color = (255, 204, 153)  # Flesh Tone.
-green = (0, 128, 0)  # Dark green
-orange = (255, 165, 0)  # Orange shirt color
-yellow = (255, 255, 0)  # Hair and shapes color
-purple = (128, 0, 128)  # Hair color for the figure
-blue = (0, 0, 255)  # Eyes
-red = (255, 0, 0)  # Mouth
-brown = (139, 69, 19)  # Noses
-text_background = (57, 255, 20)  # Bright green.
-black = (0, 0, 0)  # Black for outlines and pupils
+# Пропорции
+BODY_WIDTH = 280
+BODY_HEIGHT = 380
+HEAD_RADIUS = 100
+EAR_LENGTH = 160
+EAR_WIDTH = 50
 
 
-# Function for Drawing the Figure
-def draw_figure(surface, x, y, hair_color, shirt_color, eye_color, triangle_color):
+def draw_outlined_ellipse(surface, color, rect, outline_width):
+    pygame.draw.ellipse(surface, OUTLINE_COLOR, rect.inflate(outline_width * 2, outline_width * 2))
+    pygame.draw.ellipse(surface, color, rect)
 
-    # Body - Circle
-    body_radius = 180
-    body_y_offset = 170
-    pygame.draw.circle(surface, shirt_color, (x, y + body_y_offset), body_radius)
-    pygame.draw.circle(surface, black, (x, y + body_y_offset), body_radius, 2)
 
-    # Shoulders - Pentagons
-    shoulder_radius = 40
-    shoulder_points_left = []
-    shoulder_points_right = []
-    for i in range(5):
-        angle = i * (2 * math.pi / 5)
-        shoulder_x_left = x - 130 + int(shoulder_radius * math.cos(angle))
-        shoulder_y_left = y - 100 + body_y_offset + int(shoulder_radius * math.sin(angle))
-        shoulder_points_left.append((shoulder_x_left, shoulder_y_left))
+def draw_outlined_circle(surface, color, center, radius, outline_width):
+    pygame.draw.circle(surface, OUTLINE_COLOR, center, radius + outline_width)
+    pygame.draw.circle(surface, color, center, radius)
 
-        shoulder_x_right = x + 130 + int(shoulder_radius * math.cos(angle))
-        shoulder_y_right = y - 100 + body_y_offset + int(shoulder_radius * math.sin(angle))
-        shoulder_points_right.append((shoulder_x_right, shoulder_y_right))
 
-    pygame.draw.polygon(surface, shirt_color, shoulder_points_left)
-    pygame.draw.polygon(surface, shirt_color, shoulder_points_right)
-    pygame.draw.polygon(surface, black, shoulder_points_left, 2)  # Outline
-    pygame.draw.polygon(surface, black, shoulder_points_right, 2)  # Outline
+def draw_bunny(surface):
+    def draw_shadow():
+        shadow_surface = pygame.Surface((400, 200), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow_surface, SHADOW_COLOR, (0, 0, 400, 100))
+        surface.blit(shadow_surface, (center_x - 200, center_y + 150))
 
-    # Head - Circle
-    head_radius = 120
-    pygame.draw.circle(surface, skin_color, (x, y - 80), head_radius)  # No Outline
-    triangle_size = 20
+    def draw_body():
+        body_rect = pygame.Rect(
+            center_x - BODY_WIDTH // 2,
+            center_y - BODY_HEIGHT // 3,
+            BODY_WIDTH,
+            BODY_HEIGHT
+        )
+        draw_outlined_ellipse(surface, BUNNY_COLOR, body_rect, outline_width)
 
-    # Calculate and draw colored triangles
-    num_triangles = 10
-    for i in range(num_triangles):
-        angle = math.pi + (i * (math.pi / (num_triangles - 1)))
-        triangle_x = x + head_radius * math.cos(angle)
-        triangle_y = y - 80 + head_radius * math.sin(angle)  # Adjust based on y
+    def draw_hind_legs():
+        for x, y, w, h in [
+            (center_x - BODY_WIDTH * 0.45, center_y + BODY_HEIGHT * 0.4, 140, 240),
+            (center_x + BODY_WIDTH * 0.45 - 140, center_y + BODY_HEIGHT * 0.4, 140, 240)
+        ]:
+            leg_rect = pygame.Rect(x, y, w, h)
+            draw_outlined_ellipse(surface, BUNNY_COLOR, leg_rect, outline_width)
 
-        # Define triangle vertices
-        point1 = (triangle_x, triangle_y - triangle_size)  # Top point of triangle
-        point2 = (triangle_x - triangle_size / 2, triangle_y + triangle_size / 2)  # Bottom Left
-        point3 = (triangle_x + triangle_size / 2, triangle_y + triangle_size / 2)  # Bottom Right
+    def draw_front_legs():
+        for x, y, w, h in [
+            (center_x - BODY_WIDTH * 0.32, center_y + BODY_HEIGHT * 0.15, 100, 220),
+            (center_x + BODY_WIDTH * 0.32 - 100, center_y + BODY_HEIGHT * 0.15, 100, 220)
+        ]:
+            arm_rect = pygame.Rect(x, y, w, h)
+            draw_outlined_ellipse(surface, BUNNY_COLOR, arm_rect, outline_width)
 
-        pygame.draw.polygon(surface, triangle_color, [point1, point2, point3])  # Triangle filled
+            for i in range(3):
+                finger_rect = pygame.Rect(
+                    arm_rect.x + 20 + i * 25,
+                    arm_rect.bottom - 40,
+                    20,
+                    60
+                )
+                draw_outlined_ellipse(surface, BUNNY_COLOR, finger_rect, 1)
 
-    # Eyes
-    eye_radius = 15
-    pupil_radius = 5
-    pygame.draw.circle(surface, eye_color, (x - 40, y - 100), eye_radius)
-    pygame.draw.circle(surface, black, (x - 40, y - 100), eye_radius, 2)
-    pygame.draw.circle(surface, black, (x - 40, y - 100), pupil_radius)
+    def draw_head():
+        draw_outlined_circle(surface, BUNNY_COLOR, head_center, HEAD_RADIUS, outline_width)
 
-    pygame.draw.circle(surface, eye_color, (x + 40, y - 100), eye_radius)
-    pygame.draw.circle(surface, black, (x + 40, y - 100), eye_radius, 2)
-    pygame.draw.circle(surface, black, (x + 40, y - 100), pupil_radius)
+    def draw_ears():
+        for side in [-1, 1]:
+            ear_base_x = head_center[0] + side * HEAD_RADIUS * 0.4
+            ear_base_y = head_center[1] - HEAD_RADIUS * 0.9
 
-    # Nose
-    pygame.draw.polygon(surface, brown, [(x - 8, y - 70), (x, y - 60), (x + 8, y - 70)])
+            ear_rect = pygame.Rect(
+                ear_base_x - EAR_WIDTH // 2,
+                ear_base_y - EAR_LENGTH,
+                EAR_WIDTH,
+                EAR_LENGTH
+            )
+            draw_outlined_ellipse(surface, BUNNY_COLOR, ear_rect, outline_width)
 
-    # Mouth
-    pygame.draw.polygon(surface, red, [(x - 40, y - 40), (x, y - 20), (x + 40, y - 40)])
+            inner_ear_rect = ear_rect.inflate(-10, -40)
+            inner_ear_rect.y += 20
+            pygame.draw.ellipse(surface, EAR_INNER_COLOR, inner_ear_rect)
 
-    return x, y  # Returning the values
+    def draw_eyes():
+        for x_offset in [-50, 50]:
+            eye_pos = (head_center[0] + x_offset, eye_y_position)
+            draw_outlined_circle(surface, (255, 255, 255), eye_pos, 25, outline_width)
+            pygame.draw.circle(surface, EYE_COLOR, eye_pos, 15)
+            pygame.draw.circle(surface, (0, 0, 0), eye_pos, 7)
+            pygame.draw.circle(surface, (255, 255, 255), (eye_pos[0] + 8, eye_pos[1] - 8), 4)
 
-# --- DRAWING HELPERS ----
+    def draw_nose():
+        pygame.draw.polygon(surface, OUTLINE_COLOR, nose_points)
+        pygame.draw.polygon(surface, NOSE_COLOR, [
+            (head_center[0], eye_y_position + 62),
+            (head_center[0] - 22, eye_y_position + 88),
+            (head_center[0] + 22, eye_y_position + 88)
+        ])
 
-def draw_arms(x, y, surface):
-    body_y_offset = 20
-    pygame.draw.line(surface, skin_color, (x - 120, y + 20 + body_y_offset), (x - 200, 50), 15)
-    pygame.draw.line(surface, skin_color, (x + 120, y + 20 + body_y_offset), (x + 200, 50), 15)
+    def draw_mouth():
+        pygame.draw.arc(surface, MOUTH_COLOR, mouth_rect, math.pi * 0.7, math.pi * 1.3, 3)
 
-# --- Main loop ---
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    def draw_whiskers():
+        for side in [-1, 1]:
+            base_x = head_center[0] + side * 35
+            base_y = eye_y_position + 85
+            for angle in range(-30, 40, 10):
+                rad_angle = math.radians(angle)
+                length = 50 + abs(angle) * 2
+                end_x = base_x + side * length * math.cos(rad_angle)
+                end_y = base_y + length * math.sin(rad_angle)
+                pygame.draw.line(surface, WHISKER_COLOR, (base_x, base_y), (end_x, end_y), 2)
 
-    # Drawing on to screen
-    screen.fill(white)  # White Background
+    def draw_tail():
+        draw_outlined_circle(surface, BUNNY_COLOR, tail_center, 45, outline_width)
+        for i in range(20):
+            angle = math.radians(i * 18)
+            px = tail_center[0] + 35 * math.cos(angle)
+            py = tail_center[1] + 35 * math.sin(angle)
+            pygame.draw.line(surface, OUTLINE_COLOR, (px, py), (px + 10 * math.cos(angle), py + 10 * math.sin(angle)),
+                             2)
 
-    # Positioning the single figure in the center
-    figure_x = width // 2
-    figure_y = height // 2
+    # Основная логика рисования
+    center_x = WINDOW_WIDTH // 2
+    center_y = WINDOW_HEIGHT // 2 + 50
+    outline_width = 3
+    head_center = (center_x, center_y - BODY_HEIGHT * 0.3)
+    eye_y_position = head_center[1] - 40
+    nose_points = [
+        (head_center[0], eye_y_position + 60),
+        (head_center[0] - 25, eye_y_position + 90),
+        (head_center[0] + 25, eye_y_position + 90)
+    ]
+    mouth_rect = pygame.Rect(
+        head_center[0] - 20,
+        eye_y_position + 100,
+        40,
+        30
+    )
+    tail_center = (center_x + 180, center_y + 120)
 
-    # Draw the figure
-    draw_figure(screen, figure_x, figure_y, yellow, green, (100, 100, 100), purple)  # Single figure with purple triangles
+    # Порядок отрисовки элементов
+    draw_shadow()
+    draw_body()
+    draw_hind_legs()
+    draw_front_legs()
+    draw_head()
+    draw_ears()
+    draw_eyes()
+    draw_nose()
+    draw_mouth()
+    draw_whiskers()
+    draw_tail()
 
-    # Draw arms for the figure
-    draw_arms(figure_x, figure_y, screen)
 
-    # Banner + text
-    font_size = 50
-    font = pygame.font.Font(None, font_size)
-    text = font.render("PYTHON is REALLY AMAZING!", True, (0, 0, 0))
-    text_rect = text.get_rect(center=(width // 2, 50))
-    text_rect.width += 20
-    text_rect.height += 10
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    pygame.display.set_caption("Bunny with Mouth")
+    clock = pygame.time.Clock()
 
-    pygame.draw.rect(screen, text_background, (0, 0, width, text_rect.height + 40))
-    pygame.draw.rect(screen, black, (0, 0, width, text_rect.height + 40), 3)
-    screen.blit(text, text_rect)
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    # Update the display
-    pygame.display.flip()
+        screen.fill(BACKGROUND_COLOR)
+        draw_bunny(screen)
+        pygame.display.flip()
+        clock.tick(30)
 
-# Quit Pygame
-pygame.quit()
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
